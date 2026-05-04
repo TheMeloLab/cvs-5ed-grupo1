@@ -6,7 +6,7 @@ from detection import VehiclesDetection
 import os
 
 detector = VehiclesDetection(
-    model_path="models/yolov8n.pt",
+    model_path="models/best.pt",
     confidence=0.25
 )
 
