@@ -4,11 +4,14 @@ import pytesseract
 from ultralytics import YOLO
 from detection import VehiclesDetection
 import os
+from preprocessor import FramePreprocessor
 
 detector = VehiclesDetection(
     model_path="models/best.pt",
     confidence=0.25
 )
+
+preprocessor = FramePreprocessor()
 
 os.makedirs("outputs", exist_ok=True)
 
@@ -23,13 +26,18 @@ def process_video(video_path):
         return None, "Could not open video."
 
     fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    ret, test_frame = cap.read()
+    processed_test = preprocessor.process(test_frame)
+    processed_height, processed_width = processed_test.shape[:2]
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
     output_path = "outputs/annotated_video.mp4"
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    out = cv2.VideoWriter(output_path, fourcc, fps, (processed_width, processed_height))
 
     frame_count = 0
     detection_count = 0
@@ -42,8 +50,16 @@ def process_video(video_path):
 
         frame_count += 1
 
+        frame = preprocessor.process(frame) 
+
         detections = detector.detect_cars(frame)
         detection_count += len(detections)
+
+        for det in detections:                          
+            x1, y1, x2, y2 = det['bbox']
+            plate_crop = frame[y1:y2, x1:x2]
+            plate_ready = preprocessor.process_plate_crop(plate_crop)
+            # plate_ready por utilizar pelo OCR
 
         annotated_frame = detector.draw_detections(frame, detections)
 
