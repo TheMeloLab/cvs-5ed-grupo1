@@ -19,4 +19,4 @@ results = model.train(
 )
 
 print("Treino concluído.")
-print("Melhor modelo em: runs/detect/alpr/weights/best.pt")
+print("Melhor modelo em: models/best.pt")
