@@ -1,10 +1,9 @@
 import cv2
 import gradio as gr
-import pytesseract
-from ultralytics import YOLO
 from detection import VehiclesDetection
 import os
 from preprocessor import FramePreprocessor
+from extraction import PlateExtractor
 
 detector = VehiclesDetection(
     model_path="models/best.pt",
@@ -12,6 +11,7 @@ detector = VehiclesDetection(
 )
 
 preprocessor = FramePreprocessor()
+extractor = PlateExtractor()
 
 os.makedirs("outputs", exist_ok=True)
 
@@ -59,7 +59,9 @@ def process_video(video_path):
             x1, y1, x2, y2 = det['bbox']
             plate_crop = frame[y1:y2, x1:x2]
             plate_ready = preprocessor.process_plate_crop(plate_crop)
-            # plate_ready por utilizar pelo OCR
+            text = extractor.extract(plate_ready)
+            if text:
+                det['plate_text'] = text
 
         annotated_frame = detector.draw_detections(frame, detections)
 
