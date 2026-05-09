@@ -1,12 +1,11 @@
 import cv2
 import gradio as gr
-import pytesseract
 from ultralytics import YOLO
 from detection import VehiclesDetection
 import os
 
 detector = VehiclesDetection(
-    model_path="models/best.pt",
+    plate_model_path="models/best.pt",
     confidence=0.25
 )
 
@@ -41,9 +40,10 @@ def process_video(video_path):
             break
 
         frame_count += 1
-
+        
         detections = detector.detect_cars(frame)
-        detection_count += len(detections)
+        # detection_plates_count = len(detector.tracked_plates)
+        # detection_vehicles_count = len(detector.detected_vehicles)
 
         annotated_frame = detector.draw_detections(frame, detections)
 
@@ -52,7 +52,11 @@ def process_video(video_path):
     cap.release()
     out.release()
 
-    summary = f"Processed {frame_count} frames.\nDetected {detection_count} vehicles."
+    # Preparar summary com matrículas únicas
+    plate_list = sorted(detector.detected_plates)
+    plate_summary = ", ".join(plate_list) if plate_list else "Nenhuma matrícula detectada"
+
+    summary = f"Processed {frame_count} frames.\nDetected plates: {plate_summary}"
 
     return output_path, summary
 
@@ -61,11 +65,11 @@ app = gr.Interface(
     fn=process_video,
     inputs=gr.Video(label="Upload video"),
     outputs=[
-        gr.Video(label="Video with Vehicle Detection"),
+        gr.Video(label="Video with Vehicle and plates Detection"),
         gr.Textbox(label="Detection Summary")
     ],
     title="CVGAI I01 - License Plate Recognition",
-    description="Upload a video to detect vehicles and draw green bounding boxes."
+    description="Upload a video to detect license plates and draw blue bounding boxes."
 )
 
 
