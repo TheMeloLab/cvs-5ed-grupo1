@@ -15,6 +15,7 @@ class VehiclesDetection:
         self.preprocessor = preprocessor
         self.detected_plates = set() # MATRÍCULAS JÁ DETECTADAS
         self.tracked_plates = {} # TRACK_ID -> MATRÍCULA
+        self.plate_votes = {} 
 
         # CLASSES COCO
         self.vehicle_classes = {
@@ -98,15 +99,26 @@ class VehiclesDetection:
                             any(c.isdigit() for c in text)):
 
                             # Atualiza tracking
-                            if track_id not in self.tracked_plates:
-                                if not self.is_similar_plate(text):
-                                    self.tracked_plates[track_id] = text
-                                    self.detected_plates.add(text)
+                            if (len(text) >= 6 and any(c.isdigit() for c in text)):
 
-                            # reutiliza matrícula conhecida
-                            plate_text = self.tracked_plates.get(
-                                track_id,
-                                text)
+                                # Adiciona voto para este texto
+                                if track_id not in self.plate_votes:
+                                    self.plate_votes[track_id] = {}
+                                self.plate_votes[track_id][text] = self.plate_votes[track_id].get(text, 0) + 1
+
+                                # Escolhe o texto mais votado
+                                best_text = max(self.plate_votes[track_id], key=self.plate_votes[track_id].get)
+
+                                # Atualiza se o mais votado mudou
+                                previous = self.tracked_plates.get(track_id)
+                                if best_text != previous:
+                                    if previous:
+                                        self.detected_plates.discard(previous)
+                                    if not self.is_similar_plate(best_text):
+                                        self.tracked_plates[track_id] = best_text
+                                        self.detected_plates.add(best_text)
+
+                                plate_text = self.tracked_plates.get(track_id, text)
 
                         break
 
@@ -136,11 +148,8 @@ class VehiclesDetection:
             # =========================
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
-
             label = f'{vehicle.upper()}'
-
             cv2.rectangle(frame, (x1, y1 - 30), (x1 + 260, y1), (0, 255, 0), -1)
-
             cv2.putText(frame, label, (x1 + 5, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)
 
             # =========================
@@ -150,25 +159,23 @@ class VehiclesDetection:
             if det["plate_bbox"] is not None:
 
                 px1, py1, px2, py2 = det["plate_bbox"]
-
                 cv2.rectangle(frame, (px1, py1), (px2, py2), (255, 0, 0), 1)
-
                 cv2.rectangle(frame, (px1, py1 - 30), (px1 + 220, py1), (255, 0, 0), -1)
-
                 cv2.putText(frame, plate, (px1 + 5, py1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         return frame
 
     def read_plate(self, image):
         # Se o preprocessor estiver disponível, usa o pipeline completo
-        if self.preprocessor is not None:
-            image = self.preprocessor.process_plate_crop(image)
-        else:
+        # if self.preprocessor is not None:
+            # image = self.preprocessor.process_plate_crop(image)
+        # else:
             # Fallback: processamento simples
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            image = cv2.GaussianBlur(gray, (3, 3), 0)
+        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # image = cv2.GaussianBlur(gray, (3, 3), 0)
 
-        text = pytesseract.image_to_string(image, config='--psm 7')
+        # text = pytesseract.image_to_string(image, config='--psm 7')
+        text = pytesseract.image_to_string(image, config='--psm 8')
         return text.strip()
 
     def clean_plate(self, text):

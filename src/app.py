@@ -3,6 +3,7 @@ import gradio as gr
 from detection import VehiclesDetection
 from preprocessor import FramePreprocessor
 import os
+import time
 
 preprocessor = FramePreprocessor()
 detector = VehiclesDetection(preprocessor=preprocessor)
@@ -10,6 +11,7 @@ detector = VehiclesDetection(preprocessor=preprocessor)
 os.makedirs("outputs", exist_ok=True)
 
 def process_video(video_path):
+    start = time.time() 
     if video_path is None:
         return None, "Please upload a video."
 
@@ -42,7 +44,7 @@ def process_video(video_path):
 
         frame_count += 1
 
-        frame = preprocessor.process(frame)
+        # frame = preprocessor.process(frame)
         detections = detector.detect_cars(frame)
         annotated_frame = detector.draw_detections(frame, detections)
         out.write(annotated_frame)
@@ -52,6 +54,8 @@ def process_video(video_path):
 
     plate_list = sorted(detector.detected_plates)
     plate_summary = ", ".join(plate_list) if plate_list else "Nenhuma matrícula detectada"
+    elapsed = time.time() - start
+    print(f"Time: {elapsed:.2f}s")
     summary = f"Processed {frame_count} frames.\nDetected plates: {plate_summary}"
 
     return output_path, summary

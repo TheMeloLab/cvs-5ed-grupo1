@@ -48,7 +48,7 @@ class FramePreprocessor:
         diagnosis = self._analyze(frame)
 
         # Denoising: quase sempre útil — ruído piora todas as etapas seguintes
-        frame = self._denoise(frame)
+        # frame = self._denoise(frame)
 
         # CLAHE: só se o contraste for baixo ou o frame estiver escuro
         if diagnosis["low_contrast"] or diagnosis["dark"]:
