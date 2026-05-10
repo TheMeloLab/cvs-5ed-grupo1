@@ -8,5 +8,6 @@ dependencies = [
     "gradio>=6.13.0",
     "opencv-python>=4.13.0.92",
     "pytesseract>=0.3.13",
+    "python-dotenv>=1.2.2",
     "ultralytics>=8.4.43",
 ]

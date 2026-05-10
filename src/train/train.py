@@ -1,9 +1,17 @@
+import os
 from ultralytics import YOLO
+import torch
 
-model = YOLO("yolov8n.pt")
+
+# Sobe 3 níveis: train/ -> src/ -> raiz do projeto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+
+
+model = YOLO("yolov8s.pt")
 
 results = model.train(
-    data="dataset/data.yaml",
+    data=os.path.join(BASE_DIR, "dataset", "data.yaml"),
     epochs=100,
     imgsz=640,
     name="alpr",
@@ -13,9 +21,9 @@ results = model.train(
     augment=True,
     mosaic=1.0,
     degrees=10.0,
-    hsv_v=0.4,
+    hsv_v=0.25,
     fliplr=0.0,
-    device="mps",
+    device=device,
 )
 
 print("Treino concluído.")
