@@ -1,8 +1,11 @@
 import os
 from ultralytics import YOLO
+import torch
+
 
 # Sobe 3 níveis: train/ -> src/ -> raiz do projeto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
 
 model = YOLO("yolov8s.pt")
